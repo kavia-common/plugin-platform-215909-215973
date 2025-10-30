@@ -19,6 +19,8 @@ import { useSearchParams, useParams, useRouter } from "next/navigation";
  * - redirect: "true" | "false" (optional; when true triggers redirect)
  * - ...any other params will be listed under "Additional details" for debugging but ignored functionally
  */
+import { Suspense } from "react";
+
 export default function OAuthCallbackPage() {
   const searchParams = useSearchParams();
   const params = useParams<{ connectorId: string }>();
@@ -93,8 +95,9 @@ export default function OAuthCallbackPage() {
   };
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-10">
-      <div className="flex items-center justify-between mb-6">
+    <Suspense fallback={<div className="max-w-2xl mx-auto px-4 py-10 text-sm text-gray-600">Loading…</div>}>
+      <main className="max-w-2xl mx-auto px-4 py-10">
+        <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold">OAuth Callback</h1>
         <StatusBadge type={status} />
       </div>
@@ -174,6 +177,7 @@ export default function OAuthCallbackPage() {
       <p className="mt-6 text-xs text-gray-500">
         Tip: In mock mode, the backend may redirect here with only state/status/message. Unknown parameters are ignored safely.
       </p>
-    </main>
+      </main>
+    </Suspense>
   );
 }
