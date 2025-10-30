@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { SearchStatusBanner } from './SearchStatusClient';
 import { IntegrationsClient } from './pageClient';
+import QuickActionsLauncher from './quickActionsLauncher';
 
 /**
  * Static-export friendly Integrations page.
@@ -10,14 +11,23 @@ import { IntegrationsClient } from './pageClient';
 export default function IntegrationsPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-2">Integrations</h1>
-      <p className="text-sm text-gray-600 mb-4">
-        Connect external tools (e.g., Jira, Confluence) to use them in chat and actions.
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Integrations</h1>
+          <p className="text-sm text-gray-600">
+            Connect external tools (e.g., Jira, Confluence) to use them in chat and actions.
+          </p>
+        </div>
+        <QuickActionsLauncher />
+      </div>
 
-      <SearchStatusBanner />
+      <div className="mt-4">
+        <Suspense fallback={<div className="text-sm text-gray-600">Loading status…</div>}>
+          <SearchStatusBanner />
+        </Suspense>
+      </div>
 
-      <Suspense fallback={<div className="text-sm text-gray-600">Loading...</div>}>
+      <Suspense fallback={<div className="text-sm text-gray-600">Loading integrations…</div>}>
         <IntegrationsClient />
       </Suspense>
     </div>
