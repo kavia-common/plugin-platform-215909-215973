@@ -6,6 +6,10 @@ type Props = {
   status: 'connected' | 'disconnected' | 'error' | 'none' | string | undefined;
 };
 
+/**
+ * PUBLIC_INTERFACE
+ * ConnectionStatus shows a small badge describing current connection state.
+ */
 export function ConnectionStatus({ status }: Props) {
   let color = 'bg-gray-200 text-gray-800';
   let label = 'Not connected';

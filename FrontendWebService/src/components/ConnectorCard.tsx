@@ -8,12 +8,15 @@ import { useRouter } from 'next/navigation';
 
 type Props = {
   connector: Connector;
-  // Optional existing connection object matched by connector.name
+  /**
+   * Optional existing connection object matched by connector.name
+   */
   connection?: Connection | null;
   onDisconnected?: (connectorName: string) => void;
   onConnecting?: (connectorName: string) => void;
 };
 
+// PUBLIC_INTERFACE
 export function ConnectorCard({
   connector,
   connection,
@@ -25,6 +28,7 @@ export function ConnectorCard({
   const [optimisticConnected, setOptimisticConnected] = useState<
     'connected' | 'disconnected' | null
   >(null);
+
   const connected = useMemo(() => {
     if (optimisticConnected) return optimisticConnected === 'connected';
     return connection?.status === 'connected';
@@ -38,7 +42,7 @@ export function ConnectorCard({
     try {
       const redirectUri =
         typeof window !== 'undefined'
-          ? `${window.location.origin}/integrations` // fallback: return here after auth
+          ? `${window.location.origin}/integrations`
           : undefined;
 
       const resp = await startConnectorOAuthLogin(connector.name, {
@@ -46,7 +50,6 @@ export function ConnectorCard({
         use_pkce: true,
       });
 
-      // Persist state in sessionStorage in case we need to check on return
       if (typeof window !== 'undefined') {
         sessionStorage.setItem(
           `oauth_state_${connector.name}`,
@@ -84,11 +87,9 @@ export function ConnectorCard({
     try {
       await deleteConnectorConnection(connector.name);
       onDisconnected?.(connector.name);
-      // stay on page and refresh list
       router.refresh?.();
     } catch (e) {
       console.error('Disconnect failed', e);
-      // rollback optimistic update
       setOptimisticConnected(prev);
       alert(
         `Failed to disconnect ${connector.title}. Please retry or check logs.`

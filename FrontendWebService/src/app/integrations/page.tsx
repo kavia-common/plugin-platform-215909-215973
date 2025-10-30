@@ -1,30 +1,13 @@
-import { listConnectors, listConnections, type Connector, type Connection } from '@/lib/api';
+import { Suspense } from 'react';
+import { SearchStatusBanner } from './SearchStatusClient';
 import { IntegrationsClient } from './pageClient';
 
-// This page is a server component that fetches data, with a client component for interactivity.
-export const dynamic = 'force-dynamic';
-
-async function getData(): Promise<{
-  connectors: Connector[];
-  connectionsByConnector: Record<string, Connection>;
-}> {
-  const [connectors, connectionsResp] = await Promise.all([
-    listConnectors(),
-    listConnections(),
-  ]);
-  const byConnector: Record<string, Connection> = {};
-  for (const c of connectionsResp.items || []) {
-    // assume one connection per connector per tenant
-    if (!byConnector[c.connector]) byConnector[c.connector] = c;
-  }
-  return { connectors, connectionsByConnector: byConnector };
-}
-
-import { SearchStatusBanner } from './SearchStatusClient';
-
-export default async function IntegrationsPage() {
-  const { connectors, connectionsByConnector } = await getData();
-
+/**
+ * Static-export friendly Integrations page.
+ * We render the shell and let the client component fetch data at runtime.
+ * Wrap client-side hooks usage in a Suspense boundary per Next.js CSR bailout guidance.
+ */
+export default function IntegrationsPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-2">Integrations</h1>
@@ -34,10 +17,9 @@ export default async function IntegrationsPage() {
 
       <SearchStatusBanner />
 
-      <IntegrationsClient
-        connectors={connectors}
-        connectionsByConnector={connectionsByConnector}
-      />
+      <Suspense fallback={<div className="text-sm text-gray-600">Loading...</div>}>
+        <IntegrationsClient />
+      </Suspense>
     </div>
   );
 }

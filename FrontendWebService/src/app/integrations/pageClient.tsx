@@ -1,21 +1,47 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Connector, Connection } from '@/lib/api';
+import { listConnectors, listConnections } from '@/lib/api';
 import { ConnectorCard } from '@/components/ConnectorCard';
 
-type Props = {
-  connectors: Connector[];
-  connectionsByConnector: Record<string, Connection>;
-};
+/**
+ * PUBLIC_INTERFACE
+ * IntegrationsClient presents connector cards and manages minor optimistic UI updates.
+ * In static export mode, it fetches connectors and connections on the client.
+ */
+export function IntegrationsClient() {
+  const [connectors, setConnectors] = useState<Connector[] | null>(null);
+  const [connMap, setConnMap] = useState<Record<string, Connection>>({});
+  const [error, setError] = useState<string | null>(null);
 
-export function IntegrationsClient({
-  connectors,
-  connectionsByConnector,
-}: Props) {
-  const [connMap, setConnMap] = useState<Record<string, Connection>>(
-    connectionsByConnector || {}
-  );
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const [cs, conns] = await Promise.all([
+          listConnectors(),
+          listConnections(),
+        ]);
+        if (cancelled) return;
+        setConnectors(cs);
+        const byConnector: Record<string, Connection> = {};
+        for (const c of conns.items || []) {
+          if (!byConnector[c.connector]) byConnector[c.connector] = c;
+        }
+        setConnMap(byConnector);
+      } catch (e) {
+        if (cancelled) return;
+        setError(
+          e instanceof Error ? e.message : 'Failed to load integrations data'
+        );
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleDisconnected = useCallback((connectorName: string) => {
     setConnMap((prev) => {
@@ -30,13 +56,28 @@ export function IntegrationsClient({
     setConnMap((prev) => ({ ...prev }));
   }, []);
 
-  const sorted = useMemo(
-    () =>
-      [...connectors].sort((a, b) =>
-        (a.title || a.name).localeCompare(b.title || b.name)
-      ),
-    [connectors]
-  );
+  const sorted = useMemo(() => {
+    if (!connectors) return [];
+    return [...connectors].sort((a, b) =>
+      (a.title || a.name).localeCompare(b.title || b.name)
+    );
+  }, [connectors]);
+
+  if (error) {
+    return (
+      <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">
+        {error}
+      </div>
+    );
+  }
+
+  if (!connectors) {
+    return (
+      <div className="text-sm text-gray-600">
+        Loading integrations...
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
